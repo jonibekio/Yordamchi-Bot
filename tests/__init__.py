@@ -1,0 +1,3 @@
+"""
+Testlar to'plami
+"""
