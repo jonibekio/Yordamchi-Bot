@@ -22,7 +22,34 @@ settings = get_settings()
 async def main() -> None:
     logger.info("O‘zbek AI Yordamchi Telegram boti ishga tushirilmoqda...")
 
-    # 1. Bazani initsializatsiya qilish
+    # 1. Token tekshiruvi
+    if (
+        not settings.BOT_TOKEN
+        or "bu_yerga" in settings.BOT_TOKEN
+        or settings.BOT_TOKEN == "mock_token"
+        or ":" not in settings.BOT_TOKEN
+    ):
+        logger.error(
+            "\n"
+            "==================================================================\n"
+            "❌ BOT_TOKEN kiritilmagan yoki noto‘g‘ri!\n"
+            "👉 Iltimos, .env faylini oching va quyidagi qatorga haqiqiy tokenni yozing:\n"
+            "   BOT_TOKEN=1234567890:ABCdefGhIJKlmNoPQRsTUVwxyZ\n"
+            "Tokenni Telegram'dagi @BotFather orqali olishingiz mumkin.\n"
+            "=================================================================="
+        )
+        sys.exit(1)
+
+    if (
+        not settings.OPENAI_API_KEY
+        or "bu_yerga" in settings.OPENAI_API_KEY
+        or settings.OPENAI_API_KEY == "mock_key"
+    ):
+        logger.warning(
+            "⚠️ DIQQAT: OPENAI_API_KEY .env faylida kiritilmagan. Sun’iy intellekt xizmatlari ishlashi uchun kalit kiritishingiz lozim."
+        )
+
+    # 2. Bazani initsializatsiya qilish
     try:
         await init_db()
         logger.info("Ma'lumotlar bazasi jadvallari muvaffaqiyatli tekshirildi.")
@@ -30,23 +57,25 @@ async def main() -> None:
         logger.error(f"Bazani initsializatsiya qilishda xatolik: {e}")
         sys.exit(1)
 
-    # 2. Redis FSM Storage
+    # 3. Redis FSM Storage
+    storage = MemoryStorage()
     try:
-        redis_client = aioredis.from_url(settings.REDIS_URL)
+        redis_client = aioredis.from_url(settings.REDIS_URL, socket_timeout=1.0)
+        await redis_client.ping()
         storage = RedisStorage(redis=redis_client)
         logger.info("Redis FSM storage ulandi.")
     except Exception as e:
-        logger.warning(f"Redis ulanmadi ({e}), MemoryStorage ishlatiladi.")
+        logger.info(f"Redis ulanmadi ({e}), xavfsiz MemoryStorage ishlatiladi.")
         storage = MemoryStorage()
 
-    # 3. Bot va Dispatcher yaratish
+    # 4. Bot va Dispatcher yaratish
     bot = Bot(
         token=settings.BOT_TOKEN,
         default=DefaultBotProperties(parse_mode=ParseMode.HTML),
     )
     dp = Dispatcher(storage=storage)
 
-    # 4. Middlewarelarni ro'yxatdan o'tkazish
+    # 5. Middlewarelarni ro'yxatdan o'tkazish
     dp.message.outer_middleware(LoggingMiddleware())
     dp.callback_query.outer_middleware(LoggingMiddleware())
 
@@ -56,10 +85,10 @@ async def main() -> None:
     dp.message.middleware(UserMiddleware())
     dp.callback_query.middleware(UserMiddleware())
 
-    # 5. Asosiy Routerni ulash
+    # 6. Asosiy Routerni ulash
     dp.include_router(get_main_router())
 
-    # 6. Eslatmalar fon xizmatini (scheduler) ishga tushirish
+    # 7. Eslatmalar fon xizmatini (scheduler) ishga tushirish
     scheduler_task = asyncio.create_task(start_reminder_scheduler(bot=bot, interval_seconds=20))
 
     try:
@@ -81,4 +110,4 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
-        logger.info("Bot qo‘lda to‘xtatildi.")
+        logger.info("Bot to‘xtatildi.")

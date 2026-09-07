@@ -3,6 +3,18 @@ import re
 import sys
 from typing import Optional
 
+# Windows terminalida UTF-8 va emojilar to'g'ri chiqishi uchun
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+if hasattr(sys.stderr, "reconfigure"):
+    try:
+        sys.stderr.reconfigure(encoding="utf-8", errors="replace")
+    except Exception:
+        pass
+
 
 class SensitiveFilter(logging.Filter):
     """

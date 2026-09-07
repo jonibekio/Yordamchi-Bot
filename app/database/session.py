@@ -1,5 +1,6 @@
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
+import logging
 from typing import Optional
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -11,20 +12,25 @@ from sqlalchemy.ext.asyncio import (
 from app.config.settings import get_settings
 from app.database.models.base import Base
 
+logger = logging.getLogger("database")
 settings = get_settings()
 
 _engine: Optional[AsyncEngine] = None
 _session_factory: Optional[async_sessionmaker[AsyncSession]] = None
+_current_db_url: str = settings.DATABASE_URL
+
+
+def _build_engine(db_url: str) -> AsyncEngine:
+    kwargs = {"echo": settings.DEBUG}
+    if not db_url.startswith("sqlite"):
+        kwargs["pool_pre_ping"] = True
+    return create_async_engine(db_url, **kwargs)
 
 
 def get_engine() -> AsyncEngine:
-    global _engine
+    global _engine, _current_db_url
     if _engine is None:
-        _engine = create_async_engine(
-            settings.DATABASE_URL,
-            echo=settings.DEBUG,
-            pool_pre_ping=True,
-        )
+        _engine = _build_engine(_current_db_url)
     return _engine
 
 
@@ -54,9 +60,32 @@ async def get_db_session() -> AsyncGenerator[AsyncSession, None]:
 
 
 async def init_db() -> None:
+    global _engine, _session_factory, _current_db_url
     engine = get_engine()
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+    except Exception as e:
+        # Agar PostgreSQL ga ulanishda xato (masalan parol noto'g'ri) bo'lsa,
+        # dasturni to'xtatib qo'ymasdan mahalliy SQLite bazasiga avtomatik o'tamiz
+        logger.warning(
+            f"⚠️ Asosiy bazaga ({_current_db_url}) ulanishda xatolik: {e}.\n"
+            f"Mahalliy 'sqlite+aiosqlite:///bot.db' bazasiga avtomatik o‘tilmoqda..."
+        )
+        if _engine is not None:
+            await _engine.dispose()
+
+        _current_db_url = "sqlite+aiosqlite:///bot.db"
+        _engine = _build_engine(_current_db_url)
+        _session_factory = async_sessionmaker(
+            bind=_engine,
+            class_=AsyncSession,
+            expire_on_commit=False,
+            autoflush=False,
+        )
+        async with _engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        logger.info("✅ SQLite bazasi muvaffaqiyatli ishga tushirildi va jadvallar yaratildi.")
 
 
 async def close_db() -> None:
