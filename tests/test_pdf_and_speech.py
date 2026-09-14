@@ -8,30 +8,31 @@ from app.services.speech.speech_service import SpeechService
 async def test_speech_service_stt_and_tts(db_session, sample_user):
     speech_service = SpeechService()
 
-    # Mock Whisper
+    # 1. Mock Whisper STT (is_gemini_active=False bo'lganda)
     mock_transcription = MagicMock()
     mock_transcription.text = "Bugun soat beshda uchrashuvim bor."
 
-    with patch.object(speech_service.client.audio.transcriptions, "create", new_callable=AsyncMock) as mock_stt:
-        mock_stt.return_value = mock_transcription
+    with patch("app.services.speech.speech_service.is_gemini_active", return_value=False):
+        with patch.object(speech_service.client.audio.transcriptions, "create", new_callable=AsyncMock) as mock_stt:
+            mock_stt.return_value = mock_transcription
 
-        result_text = await speech_service.speech_to_text(
-            audio_bytes=b"fake_audio_bytes",
-            filename="test.ogg",
-            user_id=sample_user.id,
-            session=db_session,
-        )
+            result_text = await speech_service.speech_to_text(
+                audio_bytes=b"fake_audio_bytes",
+                filename="test.ogg",
+                user_id=sample_user.id,
+                session=db_session,
+            )
 
-        assert "Bugun soat beshda uchrashuvim bor." in result_text
-        mock_stt.assert_awaited_once()
+            assert "Bugun soat beshda uchrashuvim bor." in result_text
+            mock_stt.assert_awaited_once()
 
-    # Mock TTS
-    mock_speech_resp = MagicMock()
-    mock_speech_resp.content = b"fake_mp3_bytes"
+    # 2. Mock Edge TTS
+    mock_communicate = MagicMock()
+    async def mock_stream():
+        yield {"type": "audio", "data": b"fake_mp3_bytes"}
+    mock_communicate.stream = mock_stream
 
-    with patch.object(speech_service.client.audio.speech, "create", new_callable=AsyncMock) as mock_tts:
-        mock_tts.return_value = mock_speech_resp
-
+    with patch("edge_tts.Communicate", return_value=mock_communicate):
         audio_res = await speech_service.text_to_speech(
             text="Assalomu alaykum",
             user_id=sample_user.id,
@@ -39,7 +40,6 @@ async def test_speech_service_stt_and_tts(db_session, sample_user):
         )
 
         assert audio_res == b"fake_mp3_bytes"
-        mock_tts.assert_awaited_once()
 
 
 @pytest.mark.asyncio

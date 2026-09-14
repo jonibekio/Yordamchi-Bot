@@ -40,13 +40,15 @@ async def main() -> None:
         )
         sys.exit(1)
 
-    if (
-        not settings.OPENAI_API_KEY
-        or "bu_yerga" in settings.OPENAI_API_KEY
-        or settings.OPENAI_API_KEY == "mock_key"
-    ):
+    from app.services.ai.client import is_gemini_active, get_active_model
+
+    if is_gemini_active():
+        logger.info(f"✨ AI Provayder: Google Gemini ({get_active_model()}) muvaffaqiyatli ulandi.")
+    elif settings.OPENAI_API_KEY and not settings.OPENAI_API_KEY.startswith("bu_yerga") and settings.OPENAI_API_KEY != "mock_key":
+        logger.info(f"✨ AI Provayder: OpenAI ({get_active_model()}) ulandi.")
+    else:
         logger.warning(
-            "⚠️ DIQQAT: OPENAI_API_KEY .env faylida kiritilmagan. Sun’iy intellekt xizmatlari ishlashi uchun kalit kiritishingiz lozim."
+            "⚠️ DIQQAT: GEMINI_API_KEY .env faylida kiritilmagan. Sun’iy intellekt funksiyalari ishlashi uchun kalit kiritishingiz lozim."
         )
 
     # 2. Bazani initsializatsiya qilish

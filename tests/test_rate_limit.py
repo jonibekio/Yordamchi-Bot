@@ -34,7 +34,7 @@ async def test_rate_limit_exceeded():
     middleware = RateLimitMiddleware()
 
     mock_redis = AsyncMock()
-    mock_redis.incr = AsyncMock(return_value=25)  # Exceeds limit of 20
+    mock_redis.incr = AsyncMock(return_value=50)  # Exceeds limit of 30
     mock_redis.expire = AsyncMock()
 
     message = MagicMock(spec=Message)

@@ -7,7 +7,11 @@ from app.config.settings import get_settings
 from app.database.models.ai_usage import AIUsage
 from app.database.models.conversation import Conversation
 from app.database.models.message import Message
-from app.services.ai.client import get_openai_client
+from app.services.ai.client import (
+    get_active_model,
+    get_active_vision_model,
+    get_openai_client,
+)
 from app.services.ai.prompts import (
     CHAT_SYSTEM_PROMPT,
     CHECK_KNOWLEDGE_PROMPT,
@@ -92,7 +96,7 @@ class AIService:
         session: Optional[AsyncSession] = None,
         model: Optional[str] = None,
     ) -> str:
-        used_model = model or settings.OPENAI_MODEL
+        used_model = model or get_active_model()
         try:
             response = await self.client.chat.completions.create(
                 model=used_model,
@@ -162,8 +166,9 @@ class AIService:
 
             messages_payload.append({"role": "user", "content": user_message})
 
+            active_model = get_active_model()
             response = await self.client.chat.completions.create(
-                model=settings.OPENAI_MODEL,
+                model=active_model,
                 messages=messages_payload,  # type: ignore
                 max_tokens=settings.CHAT_MAX_TOKENS,
                 temperature=0.7,
@@ -182,7 +187,7 @@ class AIService:
                 session=session,
                 user_id=user_id,
                 feature="ai_chat",
-                model=settings.OPENAI_MODEL,
+                model=active_model,
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,
             )
@@ -470,8 +475,9 @@ class AIService:
                 system_prompt = VISION_ANALYZE_PROMPT
                 user_text = question or "Ushbu rasmni batafsil tahlil qilib bering."
 
+            vision_model = get_active_vision_model()
             response = await self.client.chat.completions.create(
-                model=settings.OPENAI_VISION_MODEL,
+                model=vision_model,
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {
@@ -495,7 +501,7 @@ class AIService:
                 session=session,
                 user_id=user_id,
                 feature=f"vision_{mode}",
-                model=settings.OPENAI_VISION_MODEL,
+                model=vision_model,
                 input_tokens=input_tokens,
                 output_tokens=output_tokens,
             )

@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config.settings import get_settings
 from app.database.models.reminder import Reminder
-from app.services.ai.client import get_openai_client
+from app.services.ai.client import get_active_model, get_openai_client
 from app.utils.logger import setup_logger
 
 logger = setup_logger(__name__)
@@ -46,7 +46,7 @@ class ReminderService:
         client = get_openai_client()
         try:
             response = await client.chat.completions.create(
-                model=settings.OPENAI_MODEL,
+                model=get_active_model(),
                 messages=[
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": text},
