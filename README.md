@@ -1,208 +1,141 @@
-# 🤖 O‘zbek AI Yordamchi - Telegram Bot
+# Uzbek AI Assistant — Telegram Bot
 
-**O‘zbek AI Yordamchi** — bu 100% o‘zbek tilida ishlaydigan, foydalanuvchilarga turli sohalarda yordam beruvchi ko‘p funksiyali Telegram boti. Bot barcha javoblarni, tugmalarni, xatoliklarni va AI tizim ko‘rsatmalarini toza o‘zbek tilida taqdim etadi. Foydalanuvchi boshqa tilda yozsa ham, bot o‘zbek tilida javob qaytaradi.
+![Python](https://img.shields.io/badge/Python-3.12%2B-3776AB?logo=python&logoColor=white) ![aiogram](https://img.shields.io/badge/aiogram-3-2CA5E0?logo=telegram&logoColor=white) ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-async-4169E1?logo=postgresql&logoColor=white) ![Redis](https://img.shields.io/badge/Redis-rate_limits-DC382D?logo=redis&logoColor=white) ![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
 
----
+## Overview
 
-## 🌟 Imkoniyatlar (Asosiy Bo‘limlar)
+Yordamchi-Bot is an Uzbek-language Telegram assistant built with aiogram. It routes user requests to configured language-model providers and includes productivity and file-oriented workflows. The repository contains the bot, persistence and rate-limit infrastructure, container setup, and tests.
 
-1. 🧠 **Sun’iy intellekt:**
-   - 💬 *AI bilan suhbat*: Oxirgi xabarlar kontekstini saqlagan holda erkin muloqot.
-   - 💡 *G‘oya yaratish*: Har qanday mavzuda kreativ va innovatsion g‘oyalar.
-   - 🎯 *Qaror qabul qilish*: Variant A va B, afzalliklar, kamchiliklar, xavflar, imkoniyatlar va xolis tavsiya.
-   - 🧠 *Fikrni tahlil qilish*: Kuchli va zaif tomonlar, mantiqiy xatolar tahlili.
-   - 🔎 *Muammoni tahlil qilish*: Ildiz sabablar va qadamma-qadam yechimlar.
-   - 🧑‍💻 *Dasturlash yordamchisi*: Clean code, debug, refactoring va texnik tushuntirish.
+## Features
 
-2. ✍️ **Matn bilan ishlash:**
-   - 📝 *Matn yozish*, ✨ *Matnni yaxshilash* (grammatika va uslub), 📌 *Matnni qisqartirish*.
-   - 🔄 *Qayta yozish*, 🌐 *Tarjima qilish*, 📋 *Reja tuzish*, 💼 *Rasmiy matn*, 📱 *Ijtimoiy tarmoq posti*.
+- AI chat with conversation context, idea generation, decision support, problem analysis, and coding assistance.
+- Text drafting, rewriting, summarization, translation, planning, and formal/social copy.
+- Image analysis and OCR through the configured multimodal model.
+- Voice transcription through Gemini or OpenAI Whisper, depending on the configured provider; Uzbek text-to-speech uses Edge TTS.
+- PDF text extraction, summarization, question answering, and analysis, with file/page limits.
+- Personal notes with create, list, search, and delete flows.
+- Natural-language reminders with a background scheduler and configurable timezone.
+- Education and entertainment handlers, user activity statistics, admin statistics, and conversation reset/settings flows.
+- Persistent user, conversation, message, note, reminder, and AI usage records using async SQLAlchemy.
+- Redis-backed rate limiting and configurable per-feature token limits.
+- Docker Compose environment for the bot, PostgreSQL, and Redis.
 
-3. 📸 **Rasm bilan ishlash (Vision):**
-   - 🔍 *Rasmni tahlil qilish*, 📝 *Rasmdagi matnni aniqlash (OCR)*, ❓ *Rasm haqida savol berish*.
+Provider-specific capabilities depend on valid API credentials, model availability, and configuration. This repository does not guarantee that third-party services are active.
 
-4. 🎙 **Ovoz bilan ishlash:**
-   - 📝 *Ovozni matnga aylantirish (Speech-to-Text)*: Telegram voice message -> OpenAI Whisper.
-   - 🗣 *Matnni ovozga aylantirish (Text-to-Speech)*: Matn -> OpenAI TTS -> Telegram voice.
+## Screenshots
 
-5. 📄 **Hujjat bilan ishlash (PDF):**
-   - PDF qabul qilish (20MB gacha, xotira himoyasi bilan).
-   - 📖 *Qisqartirish*, 🔍 *Ma’lumot topish*, ❓ *Savol berish*, 📊 *Tahlil qilish*.
+No Telegram screenshots are tracked in the repository. Add genuine bot screenshots after removing any personal information from the captured chats.
 
-6. 📚 **Ta’lim:**
-   - 👨‍🏫 *Menga tushuntir (Feynman usuli)*, 📝 *4 variantli test tuzish*, ❓ *Savol-javob*.
-   - 📚 *Dars rejasini tuzish*, 🧠 *Bilimimni tekshirish*.
+## Technology stack
 
-7. 🎮 **Ko‘ngilochar:**
-   - 😂 *Meni kuldir (Hazillar)*, 🔥 *Meni tanqid qil (Do‘stona roast)*, 🎭 *Xarakter tahlili*.
-   - 🎲 *Tasodifiy topshiriq*, 🕵️ *Sirli vazifa*, ⚔️ *Qarorlar jangi*.
+| Area | Technology |
+|---|---|
+| Telegram interface | Python, aiogram 3 |
+| AI and voice | Gemini/OpenAI-compatible model clients, OpenAI Whisper fallback, Edge TTS, pypdf |
+| Persistence | PostgreSQL, SQLAlchemy async, asyncpg, Alembic |
+| Rate limiting/cache | Redis |
+| Operations | Docker, Docker Compose, pytest |
 
-8. 📝 **Shaxsiy Qaydlar (Notes):**
-   - CRUD amallari: Yangi qayd yaratish, barcha qaydlarni ko‘rish, qidirish va o‘chirish.
+## Architecture
 
-9. ⏰ **Eslatmalar (Reminders):**
-   - Erkin o‘zbekcha matndan vaqtni aniqlash (*"Bugun soat 20:00 da onamga qo‘ng‘iroq qilishni eslat"*).
-   - Asyncio fon scheduler har 20 soniyada tekshirib, xabarni o‘z vaqtida yuboradi (`Asia/Tashkent` default timezone).
-
-10. 📊 **Faoliyatim (Shaxsiy statistika):**
-    - Ishlatilgan AI so‘rovlar, kirish/chiqish tokenlari soni, qaydlar va eslatmalar soni.
-
-11. ⚙️ **Sozlamalar:**
-    - Vaqt mintaqasini o‘zgartirish, suhbat tarixini tozalash (yangi suhbat boshlash).
-
-12. 👑 **Admin Panel (`/admin`):**
-    - Jami va oxirgi 24 soatdagi faol a'zolar, bugungi va umumiy AI so‘rovlar, sarflangan tokenlar, Top-5 imkoniyatlar va tizim holati.
-
-13. 🛡 **Xavfsizlik va Rate Limiting:**
-    - Redis orqali har bir foydalanuvchi uchun so‘rovlar chegarasi (masalan, 1 daqiqada 20 ta so‘rov).
-    - Hech qanday ichki xatolik (traceback) yoki API kalitlar foydalanuvchiga chiqmaydi.
-
----
-
-## 🛠 Texnologiyalar
-
-- **Python 3.12+**
-- **aiogram 3.x** (Telegram Bot Framework)
-- **PostgreSQL** & **SQLAlchemy 2.x** (Async ORM)
-- **asyncpg** (PostgreSQL async drayveri)
-- **Alembic** (Ma'lumotlar bazasi migratsiyalari)
-- **Redis** (FSM saqlash va Rate Limiting)
-- **OpenAI API** (gpt-4o, whisper-1, tts-1)
-- **pypdf** (PDF matn ajratish)
-- **Pydantic Settings** (Muhit o‘zgaruvchilari validatsiyasi)
-- **Docker & Docker Compose** (Konteynerizatsiya)
-- **pytest & pytest-asyncio** (Avtomatlashtirilgan testlar)
-
----
-
-## 📁 Loyiha Strukturasi
-
-```
-Bot/
-├── app/
-│   ├── bot/
-│   │   ├── filters/                 # Admin huquqini tekshirish filtri
-│   │   ├── handlers/                # Domain bo'yicha ajratilgan barcha Telegram handlerlari
-│   │   ├── keyboards/               # Reply va Inline tugmalar
-│   │   ├── middlewares/             # User, Rate limit va Logging middlewarelari
-│   │   └── states/                  # Aiogram FSM holatlari
-│   ├── config/                      # Pydantic Settings konfiguratsiyasi
-│   ├── database/
-│   │   ├── models/                  # SQLAlchemy 2.0 async modellari
-│   │   └── session.py               # Async engine va sessionmaker
-│   ├── services/
-│   │   ├── ai/
-│   │   │   ├── client.py            # OpenAI async client
-│   │   │   ├── prompts/             # Domain bo'yicha tizimli promptlar
-│   │   │   └── service.py           # Barcha AI amallari va hisob-kitob
-│   │   ├── documents/               # PDF xizmati (pypdf)
-│   │   ├── notes/                   # Qaydlar boshqaruvi
-│   │   ├── reminders/               # Eslatmalar va fon scheduler
-│   │   └── speech/                  # Whisper STT va OpenAI TTS
-│   └── utils/                       # Xavfsiz logger va xabarlarni bo'lish utilitasi
-├── migrations/                      # Alembic async migratsiyalari
-├── tests/                           # To'liq mocklangan pytest to'plami
-├── .env.example                     # Muhit parametrlari namunasi
-├── .gitignore                       # Git ignore
-├── alembic.ini                      # Alembic sozlamalari
-├── Dockerfile                       # Production konteyner
-├── docker-compose.yml               # Bot, Postgres va Redis
-├── main.py                          # Asosiy kirish nuqtasi
-├── requirements.txt                 # Kutubxonalar ro'yxati
-└── README.md                        # Qo'llanma
+```mermaid
+flowchart LR
+  User[Telegram user] --> Bot[aiogram handlers and middleware]
+  Bot --> Services[Assistant and file services]
+  Services --> Models[Provider adapters]
+  Models --> AI[Configured Gemini or OpenAI provider]
+  Services --> DB[(PostgreSQL / SQLAlchemy)]
+  Bot --> Redis[(Redis rate limits)]
 ```
 
----
+Handlers coordinate Telegram updates; service modules implement the application workflows; provider and storage integrations are configured through environment variables. Database schema changes are tracked through Alembic.
 
-## 🚀 O‘rnatish va Ishga Tushirish
+## Repository layout
 
-### 1. Muhitni sozlash (.env)
+```text
+app/bot/         Telegram handlers, filters, keyboards, middleware, and FSM states
+app/config/      Pydantic settings
+app/database/    SQLAlchemy models and async session management
+app/services/    AI, document, note, reminder, and speech services
+migrations/      Alembic migration environment and revisions
+tests/           AI, error handling, notes, PDF/speech, rate-limit, reminder, and user tests
+main.py          Bot application entry point
+Dockerfile
+docker-compose.yml
+requirements.txt
+```
 
-`.env.example` faylidan `.env` nusxasini oling va qiymatlarni to‘ldiring:
+## Installation
+
+### Docker Compose
 
 ```bash
 cp .env.example .env
+# Set the bot token and only the provider keys you intend to use.
+docker compose up --build
 ```
 
-`.env` faylidagi asosiy parametrlar:
-```env
-BOT_TOKEN=your_telegram_bot_token_here
-ADMIN_ID=123456789
-OPENAI_API_KEY=sk-...
-DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/ai_bot_db
-REDIS_URL=redis://localhost:6379/0
-```
+The included Compose file defines PostgreSQL, Redis, and the bot. Review its local-development credentials and do not reuse them in a public deployment.
 
----
+### Local Python environment
 
-### 2. Mahalliy (Local) Ishga Tushirish
-
-#### a) Virtual muhit yaratish:
 ```bash
-python -m venv venv
-# Windows:
-.\venv\Scripts\Activate.ps1
-# Linux/macOS:
-source venv/bin/activate
-```
-
-#### b) Bog‘liqliklarni o‘rnatish:
-```bash
-pip install --upgrade pip
+python -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
+cp .env.example .env
 ```
 
-#### c) PostgreSQL va Redis ishga tushirish (agar Docker orqali bo'lsa):
-```bash
-docker run -d --name bot_postgres -p 5432:5432 -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=ai_bot_db postgres:16-alpine
-docker run -d --name bot_redis -p 6379:6379 redis:7-alpine
-```
+Start the configured PostgreSQL and Redis services, apply database migrations with Alembic as documented in the repository, then start the bot with `python main.py`.
 
-#### d) Migratsiyalarni qo‘llash:
-```bash
-alembic upgrade head
-```
+## Environment variables
 
-#### e) Botni ishga tushirish:
-```bash
-python main.py
-```
+Use `.env.example` for the complete current list. Never commit real credentials.
 
----
+| Variable group | Purpose |
+|---|---|
+| `BOT_TOKEN`, `ADMIN_ID` | Telegram bot identity and administrator |
+| `AI_PROVIDER`, `GEMINI_*`, `OPENAI_*` | Model selection and provider credentials/models |
+| `DATABASE_URL` | PostgreSQL connection |
+| `REDIS_URL` | Rate limiting and cache |
+| `*_MAX_TOKENS` | Per-feature response limits |
+| `RATE_LIMIT_*` | Request limits |
+| `MAX_FILE_SIZE_MB`, `MAX_PDF_PAGES` | Input limits |
+| `TTS_VOICE_UZBEK`, `DEFAULT_TIMEZONE` | Uzbek voice and reminder timezone configuration |
 
-### 3. Docker Compose orqali Ishga Tushirish (Tavsiya etiladi)
+## API documentation
 
-Bitta buyruq bilan PostgreSQL, Redis va Botni konteynerlarda parallel ishga tushirish:
+This repository is a Telegram bot; it does not expose a documented public REST API. Users interact through Telegram commands, buttons, and conversations. The internal service and database interfaces are not public API contracts.
 
-```bash
-docker-compose up --build -d
-```
+## Database structure
 
-Loglarni kuzatish:
-```bash
-docker-compose logs -f bot
-```
+The application persists Telegram users, conversations/messages, notes and reminders, and AI usage-related records. PostgreSQL models and migrations define the current schema. Redis is used for transient rate-limit/cache state.
 
-To‘xtatish:
-```bash
-docker-compose down
-```
+## Usage
 
----
+1. Create a Telegram bot and set `BOT_TOKEN`.
+2. Configure an administrator ID and at least one supported AI provider key.
+3. Start PostgreSQL and Redis, apply migrations, and run the bot.
+4. Open the bot in Telegram and follow its available commands and button flows.
 
-## 🧪 Testlarni Ishga Tushirish
+## Deployment
 
-Barcha testlar OpenAI API'ni mock qiladi va in-memory SQLite bazasida ishlaydi (haqiqiy API pul sarflanmaydi va tashqi bazaga ehtiyoj yo‘q):
+Docker Compose is provided for a self-managed deployment. For a managed host, run the bot as a long-lived worker process and provision PostgreSQL and Redis separately. Supply credentials through the host's secret manager, configure persistent database backups, and monitor Telegram/provider errors. The repository does not confirm a live Railway or other hosting connection.
 
-```bash
-pytest -v
-```
+## Security notes
 
----
+- Do not use placeholder/default bot, database, or provider credentials outside local development. The checked-in Compose file contains local database defaults; replace them before exposing services.
+- Treat conversation content, uploaded files, and API keys as sensitive data. Define retention and access policies before operating the bot for real users.
+- Do not log raw provider tokens or private user content unnecessarily.
+- Make external-provider calls resilient to timeouts, quotas, and unavailable models.
 
-## 📋 Xulosa
+## Tests
 
-Ushbu bot qat'iy standartlarga asoslangan:
-- Hech qanday ortiqcha overengineering (CQRS, keraksiz repo pattern) yo‘q.
-- Toza qatlamlar: **Handler -> FSM/Validation -> Service -> Database/OpenAI API**.
-- 100% o‘zbek tilida to‘liq foydalanuvchi tajribasi (UX).
+The repository includes test modules that mock external providers and Telegram interactions. Run them in the configured Python environment with `pytest`; this README does not claim a passing test run.
+
+## Future improvements
+
+- Add CI checks and an explicit supported Python version matrix.
+- Document commands and provider-specific feature requirements from the current handlers.
+- Add consent, retention, deletion, and data-export documentation for user content.
+- Add redacted screenshots and operational monitoring guidance.
